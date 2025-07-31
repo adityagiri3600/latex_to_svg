@@ -1,0 +1,5 @@
+*.o
+l2s
+lexer.c
+parser.c
+parser.h
