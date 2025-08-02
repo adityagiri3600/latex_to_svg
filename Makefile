@@ -8,7 +8,7 @@ TARGET = $(BUILDDIR)/l2s
 # Source files
 SOURCES = $(SRCDIR)/main.c $(SRCDIR)/ast.c
 GENERATED_SOURCES = $(BUILDDIR)/lexer.c $(BUILDDIR)/parser.c
-OBJECTS = $(BUILDDIR)/main.o $(BUILDDIR)/ast.o $(BUILDDIR)/lexer.o $(BUILDDIR)/parser.o
+OBJECTS = $(BUILDDIR)/main.o $(BUILDDIR)/ast.o $(BUILDDIR)/lexer.o $(BUILDDIR)/parser.o $(BUILDDIR)/svg_letters.o
 
 # Generated headers
 PARSER_HEADER = $(BUILDDIR)/parser.h
@@ -30,6 +30,9 @@ $(BUILDDIR)/main.o: $(SRCDIR)/main.c $(SRCDIR)/ast.h $(PARSER_HEADER)
 
 $(BUILDDIR)/ast.o: $(SRCDIR)/ast.c $(SRCDIR)/ast.h
 	gcc -c $(SRCDIR)/ast.c -I$(SRCDIR) -o $(BUILDDIR)/ast.o
+
+$(BUILDDIR)/svg_letters.o: $(SRCDIR)/svg_letters.c $(SRCDIR)/svg_letters.h
+	gcc -c $(SRCDIR)/svg_letters.c -I$(SRCDIR) -o $(BUILDDIR)/svg_letters.o
 
 $(BUILDDIR)/lexer.o: $(BUILDDIR)/lexer.c $(PARSER_HEADER)
 	gcc -c $(BUILDDIR)/lexer.c -I$(SRCDIR) -I$(BUILDDIR) -o $(BUILDDIR)/lexer.o
