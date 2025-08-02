@@ -19,11 +19,11 @@ int main() {
 
         yy_scan_string(input);
         if (yyparse() == 0 && result_ast) {
-            calculate_widths(result_ast);
+            calculate_dimensions(result_ast);
             
             printf("<svg width=\"%d\" height=\"150\">\n", result_ast->width + 40);
             
-            generate_svg(result_ast, 20, 75);
+            generate_svg(result_ast, 20, 75, 1.0);
             
             printf("</svg>\n");
             free_ast(result_ast);

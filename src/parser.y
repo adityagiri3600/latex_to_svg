@@ -13,16 +13,14 @@ Node* result_ast = NULL;
 %}
 
 %union {
-    int num;
-    char* str;
+    char ch;
     Node* node;
 }
 
-%token <num> NUMBER
-%token <str> VARIABLE
-%token FRAC PLUS MINUS MULTIPLY DIVIDE LPAREN RPAREN LBRACE RBRACE
+%token <ch> CHARACTER
+%token FRAC LBRACE RBRACE
 
-%type <node> expression program
+%type <node> expression program character_sequence frac_expr content
 
 %start program
 
@@ -33,14 +31,22 @@ program:
     ;
 
 expression:
-    NUMBER                            { $$ = create_number_node($1); }
-    | VARIABLE                        { $$ = create_variable_node($1); }
-    | expression PLUS expression      { $$ = create_binary_op_node('+', $1, $3); }
-    | expression MINUS expression     { $$ = create_binary_op_node('-', $1, $3); }
-    | expression MULTIPLY expression  { $$ = create_binary_op_node('*', $1, $3); }
-    | expression DIVIDE expression    { $$ = create_binary_op_node('/', $1, $3); }
-    | LPAREN expression RPAREN        { $$ = $2; }
-    | FRAC LBRACE expression RBRACE LBRACE expression RBRACE { $$ = create_fraction_node($3, $6); }
+    character_sequence { $$ = $1; }
+    | frac_expr { $$ = $1; }
+    | expression expression { $$ = create_sequence_node($1, $2); }
+    ;
+
+character_sequence:
+    CHARACTER { $$ = create_character_node($1); }
+    | character_sequence CHARACTER { $$ = create_sequence_node($1, create_character_node($2)); }
+    ;
+
+frac_expr:
+    FRAC LBRACE content RBRACE LBRACE content RBRACE { $$ = create_fraction_node($3, $6); }
+    ;
+
+content:
+    expression { $$ = $1; }
     ;
 
 %%
