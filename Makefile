@@ -1,25 +1,52 @@
-all: l2s
+# Directories
+SRCDIR = src
+BUILDDIR = build
 
-l2s: main.o ast.o lexer.o parser.o
-	gcc -o l2s main.o ast.o lexer.o parser.o
+# Output binary
+TARGET = $(BUILDDIR)/l2s
 
-main.o: main.c ast.h
-	gcc -c main.c
+# Source files
+SOURCES = $(SRCDIR)/main.c $(SRCDIR)/ast.c
+GENERATED_SOURCES = $(BUILDDIR)/lexer.c $(BUILDDIR)/parser.c
+OBJECTS = $(BUILDDIR)/main.o $(BUILDDIR)/ast.o $(BUILDDIR)/lexer.o $(BUILDDIR)/parser.o
 
-ast.o: ast.c ast.h
-	gcc -c ast.c
+# Generated headers
+PARSER_HEADER = $(BUILDDIR)/parser.h
 
-lexer.o: lexer.c parser.h
-	gcc -c lexer.c
+# Default target
+all: $(TARGET)
 
-parser.o: parser.c
-	gcc -c parser.c
+# Create build directory if it doesn't exist
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
 
-lexer.c: lexer.l parser.h
-	flex -o lexer.c lexer.l
+# Main target
+$(TARGET): $(BUILDDIR) $(OBJECTS)
+	gcc -o $(TARGET) $(OBJECTS)
 
-parser.c parser.h: parser.y
-	bison -d -o parser.c parser.y
+# Object files
+$(BUILDDIR)/main.o: $(SRCDIR)/main.c $(SRCDIR)/ast.h $(PARSER_HEADER)
+	gcc -c $(SRCDIR)/main.c -I$(SRCDIR) -I$(BUILDDIR) -o $(BUILDDIR)/main.o
 
+$(BUILDDIR)/ast.o: $(SRCDIR)/ast.c $(SRCDIR)/ast.h
+	gcc -c $(SRCDIR)/ast.c -I$(SRCDIR) -o $(BUILDDIR)/ast.o
+
+$(BUILDDIR)/lexer.o: $(BUILDDIR)/lexer.c $(PARSER_HEADER)
+	gcc -c $(BUILDDIR)/lexer.c -I$(SRCDIR) -I$(BUILDDIR) -o $(BUILDDIR)/lexer.o
+
+$(BUILDDIR)/parser.o: $(BUILDDIR)/parser.c
+	gcc -c $(BUILDDIR)/parser.c -I$(SRCDIR) -I$(BUILDDIR) -o $(BUILDDIR)/parser.o
+
+# Generated source files
+$(BUILDDIR)/lexer.c: $(SRCDIR)/lexer.l $(PARSER_HEADER) | $(BUILDDIR)
+	flex -o $(BUILDDIR)/lexer.c $(SRCDIR)/lexer.l
+
+$(BUILDDIR)/parser.c $(PARSER_HEADER): $(SRCDIR)/parser.y | $(BUILDDIR)
+	bison -d -o $(BUILDDIR)/parser.c $(SRCDIR)/parser.y
+
+# Clean up
 clean:
-	rm -f *.o l2s lexer.c parser.c parser.h
+	rm -rf $(BUILDDIR)
+
+# Phony targets
+.PHONY: all clean
