@@ -16,10 +16,13 @@ int main() {
         if (strncmp(input, "exit", 4) == 0) {
             break;
         }
-
+        
         yy_scan_string(input);
         if (yyparse() == 0 && result_ast) {
             calculate_dimensions(result_ast);
+            printf("\n--- AST Structure ---\n");
+            print_ast(result_ast, 0);
+            printf("--- End AST ---\n\n");
             
             printf("<svg width=\"%d\" height=\"150\">\n", result_ast->width + 40);
             

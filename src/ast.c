@@ -6,10 +6,11 @@
 
 const int CHAR_WIDTH = 12;
 const int CHAR_HEIGHT = 20;
-const int PADDING = 10;
+const int PADDING = 30;
 const int FRAC_PADDING = 5;    // Space above and below the fraction bar
-const int CHAR_SPACING = 10;    // Space between characters in a sequence
+const int CHAR_SPACING = 15;    // Space between characters in a sequence
 const float FRAC_SCALE = 0.8f; // 70% scale for numerator/denominator
+const float SCRIPT_SCALE = 0.6f; // 60% scale for superscript and subscript
 
 Node *create_character_node(char ch)
 {
@@ -28,6 +29,7 @@ Node *create_sequence_node(Node *left, Node *right)
     node->data.sequence.left = left;
     node->data.sequence.right = right;
     node->width = 0;
+    node->height = 0;
     return node;
 }
 
@@ -38,6 +40,29 @@ Node *create_fraction_node(Node *numerator, Node *denominator)
     node->data.fraction.numerator = numerator;
     node->data.fraction.denominator = denominator;
     node->width = 0;
+    node->height = 0;
+    return node;
+}
+
+Node *create_superscript_node(Node *base, Node *superscript)
+{
+    Node *node = (Node *)malloc(sizeof(Node));
+    node->type = NODE_SUPERSCRIPT;
+    node->data.superscript.base = base;
+    node->data.superscript.sup = superscript;
+    node->width = 0;
+    node->height = 0;
+    return node;
+}
+
+Node *create_subscript_node(Node *base, Node *subscript)
+{
+    Node *node = (Node *)malloc(sizeof(Node));
+    node->type = NODE_SUBSCRIPT;
+    node->data.subscript.base = base;
+    node->data.subscript.sub = subscript;
+    node->width = 0;
+    node->height = 0;
     return node;
 }
 
@@ -54,6 +79,14 @@ void free_ast(Node *node)
     case NODE_FRAC:
         free_ast(node->data.fraction.numerator);
         free_ast(node->data.fraction.denominator);
+        break;
+    case NODE_SUPERSCRIPT:
+        free_ast(node->data.superscript.base);
+        free_ast(node->data.superscript.sup);
+        break;
+    case NODE_SUBSCRIPT:
+        free_ast(node->data.subscript.base);
+        free_ast(node->data.subscript.sub);
         break;
     case NODE_CHARACTER:
         // No additional memory to free
@@ -86,6 +119,18 @@ void calculate_dimensions(Node *node)
         calculate_dimensions(node->data.fraction.denominator);
         node->width = (node->data.fraction.numerator->width > node->data.fraction.denominator->width ? node->data.fraction.numerator->width : node->data.fraction.denominator->width) + 2 * PADDING;
         node->height = node->data.fraction.numerator->height + node->data.fraction.denominator->height;
+        break;
+    case NODE_SUPERSCRIPT:
+        calculate_dimensions(node->data.superscript.base);
+        calculate_dimensions(node->data.superscript.sup);
+        node->width = node->data.superscript.base->width + node->data.superscript.sup->width * SCRIPT_SCALE;
+        node->height = node->data.superscript.base->height + node->data.superscript.sup->height * SCRIPT_SCALE;
+        break;
+    case NODE_SUBSCRIPT:
+        calculate_dimensions(node->data.subscript.base);
+        calculate_dimensions(node->data.subscript.sub);
+        node->width = node->data.subscript.base->width + node->data.subscript.sub->width * SCRIPT_SCALE;
+        node->height = node->data.subscript.base->height + node->data.subscript.sub->height * SCRIPT_SCALE;
         break;
     }
 }
@@ -148,41 +193,121 @@ void generate_svg(Node *node, int x, int y, float scale)
 
     switch (node->type)
     {
-    case NODE_CHARACTER:
-        render_char_centered(node->data.character.ch, x, y, scale);
-        break;
-    case NODE_SEQUENCE:
-    {
-        generate_svg(node->data.sequence.left, x, y, scale);
+        case NODE_CHARACTER:
+            render_char_centered(node->data.character.ch, x, y, scale);
+            break;
+        case NODE_SEQUENCE:
+        {
+            int start = x - node->width*scale / 2 + node->data.sequence.left->width * scale / 2;
+            generate_svg(node->data.sequence.left, start, y, scale);
 
-        int adv = (int)((node->data.sequence.left->width + CHAR_SPACING) * scale);
-        generate_svg(node->data.sequence.right, x + adv, y, scale);
-        break;
+            int adv = node->data.sequence.left->width * scale / 2 + CHAR_SPACING * scale 
+                      + node->data.sequence.right->width * scale / 2;
+            generate_svg(node->data.sequence.right, start + adv, y, scale);
+            break;
+        }
+
+        case NODE_FRAC:
+        {
+            float sub = scale * FRAC_SCALE;
+
+            int fracW = (int)((node->width - 2*PADDING) * scale);
+            int numW = (int)(node->data.fraction.numerator->width * sub);
+            int denW = (int)(node->data.fraction.denominator->width * sub);
+
+            int barY = y;
+            int centreX = x + fracW / 2;
+
+            printf("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
+                "stroke=\"black\" stroke-width=\"2\" />\n",
+                x, barY, x + fracW, barY);
+
+            int numX = centreX;
+            int numY = barY - node->data.fraction.numerator->height * sub / 2 - FRAC_PADDING * sub;
+            generate_svg(node->data.fraction.numerator, numX, numY, sub);
+            
+            int denX = centreX;
+            int denY = barY + node->data.fraction.denominator->height * sub / 2 + FRAC_PADDING * sub;
+            generate_svg(node->data.fraction.denominator, denX, denY, sub);
+            break;
+        }
+        case NODE_SUPERSCRIPT:
+        {
+            float sub = scale * SCRIPT_SCALE;
+
+            int baseX = x;
+            int baseY = y;
+            generate_svg(node->data.superscript.base, baseX, baseY, scale);
+
+            int supX = x + node->data.superscript.base->width / 2 + 5*scale;
+            int supY = baseY - node->data.superscript.base->height / 2;
+            generate_svg(node->data.superscript.sup, supX, supY, sub);
+            break;
+        }
+        case NODE_SUBSCRIPT:
+        {
+            float sub = scale * SCRIPT_SCALE;
+
+            int baseX = x;
+            int baseY = y;
+            generate_svg(node->data.subscript.base, baseX, baseY, scale);
+
+            int subX = x + node->data.subscript.base->width / 2 + 5*scale;
+            int subY = baseY + node->data.superscript.base->height / 2;
+            generate_svg(node->data.subscript.sub, subX, subY, sub);
+            break;
+        }
     }
+}
 
-    case NODE_FRAC:
-    {
-        float sub = scale * FRAC_SCALE;
-
-        int fracW = (int)((node->width - 2 * PADDING) * scale);
-        int numW = (int)(node->data.fraction.numerator->width * sub);
-        int denW = (int)(node->data.fraction.denominator->width * sub);
-
-        int barY = y;
-        int centreX = x + fracW / 2;
-
-        printf("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
-               "stroke=\"black\" stroke-width=\"2\" />\n",
-               x, barY, x + fracW, barY);
-
-        int numX = centreX - numW / 2.5;
-        int numY = barY - node->data.fraction.numerator->height * sub / 2 - FRAC_PADDING * sub;
-        generate_svg(node->data.fraction.numerator, numX, numY, sub);
-        
-        int denX = centreX - denW / 2.5;
-        int denY = barY + node->data.fraction.denominator->height * sub / 2 + FRAC_PADDING * sub;
-        generate_svg(node->data.fraction.denominator, denX, denY, sub);
-        break;
+void print_ast(Node* node, int depth) {
+    if (!node) return;
+    
+    // Print indentation
+    for (int i = 0; i < depth; i++) {
+        printf("  ");
     }
+    
+    switch (node->type) {
+        case NODE_CHARACTER:
+            printf("CHARACTER: '%c' (w:%d, h:%d)\n", 
+                   node->data.character.ch, node->width, node->height);
+            break;
+            
+        case NODE_SEQUENCE:
+            printf("SEQUENCE (w:%d, h:%d)\n", node->width, node->height);
+            print_ast(node->data.sequence.left, depth + 1);
+            print_ast(node->data.sequence.right, depth + 1);
+            break;
+            
+        case NODE_FRAC:
+            printf("FRACTION (w:%d, h:%d)\n", node->width, node->height);
+            for (int i = 0; i < depth + 1; i++) printf("  ");
+            printf("Numerator:\n");
+            print_ast(node->data.fraction.numerator, depth + 2);
+            for (int i = 0; i < depth + 1; i++) printf("  ");
+            printf("Denominator:\n");
+            print_ast(node->data.fraction.denominator, depth + 2);
+            break;
+            
+        case NODE_SUPERSCRIPT:
+            printf("SUPERSCRIPT (w:%d, h:%d)\n", node->width, node->height);
+            for (int i = 0; i < depth + 1; i++) printf("  ");
+            printf("Base:\n");
+            print_ast(node->data.superscript.base, depth + 2);
+            for (int i = 0; i < depth + 1; i++) printf("  ");
+            printf("Superscript:\n");
+            print_ast(node->data.superscript.sup, depth + 2);
+            break;
+            
+        case NODE_SUBSCRIPT:
+            printf("SUBSCRIPT (w:%d, h:%d)\n", node->width, node->height);
+            for (int i = 0; i < depth + 1; i++) printf("  ");
+            printf("Base:\n");
+            print_ast(node->data.subscript.base, depth + 2);
+            for (int i = 0; i < depth + 1; i++) printf("  ");
+            printf("Subscript:\n");
+            print_ast(node->data.subscript.sub, depth + 2);
+            break;
     }
 }
