@@ -1,6 +1,7 @@
 # Directories
 SRCDIR = src
 BUILDDIR = build
+INCLUDEDIR = include
 
 # Output binary
 TARGET = $(BUILDDIR)/l2s
@@ -25,20 +26,20 @@ $(TARGET): $(BUILDDIR) $(OBJECTS)
 	gcc -o $(TARGET) $(OBJECTS)
 
 # Object files
-$(BUILDDIR)/main.o: $(SRCDIR)/main.c $(SRCDIR)/ast.h $(PARSER_HEADER)
-	gcc -c $(SRCDIR)/main.c -I$(SRCDIR) -I$(BUILDDIR) -o $(BUILDDIR)/main.o
+$(BUILDDIR)/main.o: $(SRCDIR)/main.c $(INCLUDEDIR)/ast.h $(PARSER_HEADER)
+	gcc -c $(SRCDIR)/main.c -I$(INCLUDEDIR) -I$(BUILDDIR) -o $(BUILDDIR)/main.o
 
-$(BUILDDIR)/ast.o: $(SRCDIR)/ast.c $(SRCDIR)/ast.h
-	gcc -c $(SRCDIR)/ast.c -I$(SRCDIR) -o $(BUILDDIR)/ast.o
+$(BUILDDIR)/ast.o: $(SRCDIR)/ast.c $(INCLUDEDIR)/ast.h
+	gcc -c $(SRCDIR)/ast.c -I$(INCLUDEDIR) -o $(BUILDDIR)/ast.o
 
-$(BUILDDIR)/svg_letters.o: $(SRCDIR)/svg_letters.c $(SRCDIR)/svg_letters.h
-	gcc -c $(SRCDIR)/svg_letters.c -I$(SRCDIR) -o $(BUILDDIR)/svg_letters.o
+$(BUILDDIR)/svg_letters.o: $(SRCDIR)/svg_letters.c $(INCLUDEDIR)/svg_letters.h
+	gcc -c $(SRCDIR)/svg_letters.c -I$(INCLUDEDIR) -o $(BUILDDIR)/svg_letters.o
 
 $(BUILDDIR)/lexer.o: $(BUILDDIR)/lexer.c $(PARSER_HEADER)
-	gcc -c $(BUILDDIR)/lexer.c -I$(SRCDIR) -I$(BUILDDIR) -o $(BUILDDIR)/lexer.o
+	gcc -c $(BUILDDIR)/lexer.c -I$(INCLUDEDIR) -I$(BUILDDIR) -o $(BUILDDIR)/lexer.o
 
 $(BUILDDIR)/parser.o: $(BUILDDIR)/parser.c
-	gcc -c $(BUILDDIR)/parser.c -I$(SRCDIR) -I$(BUILDDIR) -o $(BUILDDIR)/parser.o
+	gcc -c $(BUILDDIR)/parser.c -I$(INCLUDEDIR) -I$(BUILDDIR) -o $(BUILDDIR)/parser.o
 
 # Generated source files
 $(BUILDDIR)/lexer.c: $(SRCDIR)/lexer.l $(PARSER_HEADER) | $(BUILDDIR)
