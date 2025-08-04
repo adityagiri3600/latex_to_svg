@@ -4,11 +4,12 @@
 #include "ast.h"
 #include "svg_letters.h"
 
+const int FONT_SIZE = 28; // Base font size for SVG rendering
 const int CHAR_WIDTH = 12;
 const int CHAR_HEIGHT = 20;
-const int PADDING = 30;
+const int PADDING = 10;
 const int FRAC_PADDING = 5;    // Space above and below the fraction bar
-const int CHAR_SPACING = 15;    // Space between characters in a sequence
+const int CHAR_SPACING = 5;    // Space between characters in a sequence
 const float FRAC_SCALE = 0.8f; // 70% scale for numerator/denominator
 const float SCRIPT_SCALE = 0.6f; // 60% scale for superscript and subscript
 
@@ -141,7 +142,7 @@ static void render_char_centered(char ch, int cx, int cy, float scale)
 
     if (g) {
         float tx = cx - (g->width  * scale) / 2.0f;
-        float ty = cy + (g->height * scale) / 2.0f ;
+        float ty = cy + (g->height * scale) / 2.0f - 1 * scale;
         float g_scale_x = (g->width * scale / 600);
         float g_scale_y = -(g->height * scale / 600);
 
@@ -153,7 +154,7 @@ static void render_char_centered(char ch, int cx, int cy, float scale)
         );
     } else {
         char buf[2] = { ch, 0 };
-        float fs = 20 * scale;
+        float fs = FONT_SIZE * scale;
         printf(
           "  <text x=\"%d\" y=\"%d\" font-family=\"Arial\" font-size=\"%f\" "
           "fill=\"black\" text-anchor=\"middle\" dominant-baseline=\"middle\">%s</text>\n",
@@ -198,7 +199,9 @@ void generate_svg(Node *node, int x, int y, float scale)
             break;
         case NODE_SEQUENCE:
         {
-            int start = x - node->width*scale / 2 + node->data.sequence.left->width * scale / 2;
+            int start = x - node->width*scale / 2;
+            if (start < 0) start = 0;
+            start += node->data.sequence.left->width * scale / 2;
             generate_svg(node->data.sequence.left, start, y, scale);
 
             int adv = node->data.sequence.left->width * scale / 2 + CHAR_SPACING * scale 
@@ -216,17 +219,16 @@ void generate_svg(Node *node, int x, int y, float scale)
             int denW = (int)(node->data.fraction.denominator->width * sub);
 
             int barY = y;
-            int centreX = x + fracW / 2;
 
             printf("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
-                "stroke=\"black\" stroke-width=\"2\" />\n",
-                x, barY, x + fracW, barY);
+                "stroke=\"black\" stroke-width=\"1\" />\n",
+                x - fracW / 2, barY, x + fracW / 2, barY);
 
-            int numX = centreX;
+            int numX = x;
             int numY = barY - node->data.fraction.numerator->height * sub / 2 - FRAC_PADDING * sub;
             generate_svg(node->data.fraction.numerator, numX, numY, sub);
             
-            int denX = centreX;
+            int denX = x;
             int denY = barY + node->data.fraction.denominator->height * sub / 2 + FRAC_PADDING * sub;
             generate_svg(node->data.fraction.denominator, denX, denY, sub);
             break;

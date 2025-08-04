@@ -5,3 +5,5 @@ parser.c
 parser.h
 
 build
+
+out.svg
