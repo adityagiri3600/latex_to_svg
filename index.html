@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>LaTeX to SVG WASM</title>
 </head>
+
 <body>
-    <button onclick="testWasm()">Test WASM</button>
-    <input type="text" id="latexInput" placeholder="Enter LaTeX expression" value="x">
+    <input type="text" id="latexInput" placeholder="eg. \frac{x^2+1}{2}" >
     <button onclick="convert()">Convert</button>
     <div id="output"></div>
 
-    <script src="./build/l2s.js"></script>
+    <script src="./l2s.js"></script>
     <script>
         let Module;
-        
-        // Load the WASM module
+
         L2SModule().then(instance => {
             Module = instance;
             console.log('WASM module loaded successfully');
@@ -23,35 +23,19 @@
             alert('Failed to load WASM module. Check console for details.');
         });
 
-        function testWasm() {
-            if (!Module) {
-                alert('WASM module not loaded yet');
-                return;
-            }
-            
-            try {
-                const result = Module.ccall('test_wasm', 'string', [], []);
-                console.log('Test result:', result);
-                alert('Test result: ' + result);
-            } catch (error) {
-                console.error('Test error:', error);
-                alert('Test failed: ' + error.message);
-            }
-        }
-
         function convert() {
             if (!Module) {
                 alert('WASM module not loaded yet. Please wait...');
                 return;
             }
-            
+
             try {
                 const input = document.getElementById('latexInput').value;
                 console.log('Converting:', input);
-                
+
                 const result = Module.ccall('latex_to_svg_wasm', 'string', ['string'], [input]);
                 console.log('Result:', result);
-                
+
                 document.getElementById('output').innerHTML = result;
             } catch (error) {
                 console.error('Error during conversion:', error);
@@ -59,10 +43,13 @@
             }
         }
 
-        // Disable input until module loads
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('latexInput').disabled = true;
+        });
+        document.getElementById('latexInput').addEventListener('input', function (event) {
+            convert();
         });
     </script>
 </body>
+
 </html>
