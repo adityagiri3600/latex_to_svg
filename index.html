@@ -13,8 +13,8 @@
     <script src="./l2s.js"></script>
     <script>
         let Module;
-
-        L2SModule().then(instance => {
+        
+        LatexToSvg().then(instance => {
             Module = instance;
             console.log('WASM module loaded successfully');
             document.getElementById('latexInput').disabled = false;
@@ -33,7 +33,7 @@
                 const input = document.getElementById('latexInput').value;
                 console.log('Converting:', input);
 
-                const result = Module.ccall('latex_to_svg_wasm', 'string', ['string'], [input]);
+                const result = Module.ccall('latex_to_svg', 'string', ['string'], [input]);
                 console.log('Result:', result);
 
                 document.getElementById('output').innerHTML = result;

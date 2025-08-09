@@ -6,6 +6,8 @@ parser.h
 
 build
 build-mingw
+build_native
+build_wasm
 emsdk
 
 out.svg
