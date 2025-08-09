@@ -2,25 +2,42 @@
 
 A LaTeX to SVG converter written in C.
 
-## Prerequisites
+## Quick Start
 
-### Linux (Ubuntu/Debian)
+### Download Pre-built Binaries
+- **Linux**: Download `l2s-linux-x64.tar.gz` from [Releases](https://github.com/yourusername/latex_to_svg/releases)
+- **Windows**: Download `l2s-windows-x64.zip` from [Releases](https://github.com/yourusername/latex_to_svg/releases)
+
+### Quick Test
+```bash
+# Linux/macOS
+echo "x^2 + y^2 = r^2" | ./l2s > equation.svg
+
+# Windows
+echo x^2 + y^2 = r^2 | l2s.exe > equation.svg
+```
+
+## Building from Source
+
+### Prerequisites
+
+#### Linux (Ubuntu/Debian)
 ```bash
 sudo apt update
 sudo apt install cmake gcc flex bison
 ```
 
-### Linux (Fedora/RHEL)
+#### Linux (Fedora/RHEL)
 ```bash
 sudo dnf install cmake gcc flex bison
 ```
 
-### macOS
+#### macOS
 ```bash
 brew install cmake gcc flex bison
 ```
 
-### Windows
+#### Windows
 - Install Visual Studio with C++ support, or
 - Install MSYS2 and run:
 ```bash
@@ -33,7 +50,7 @@ choco install cmake gcc winflexbison3
 ```
 Make sure to add the installation directory to your PATH.
 
-## Building
+### Building
 
 ```bash
 mkdir build && cd build
