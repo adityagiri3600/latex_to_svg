@@ -5,8 +5,8 @@ A LaTeX to SVG converter written in C.
 ## Quick Start
 
 ### Download Pre-built Binaries
-- **Linux**: Download `l2s-linux-x64.tar.gz` from [Releases](https://github.com/yourusername/latex_to_svg/releases)
-- **Windows**: Download `l2s-windows-x64.zip` from [Releases](https://github.com/yourusername/latex_to_svg/releases)
+- **Linux**: Download `l2s-linux-x64.tar.gz` from [Releases](https://github.com/adityagiri3600/latex_to_svg/releases)
+- **Windows**: Download `l2s-windows-x64.zip` from [Releases](https://github.com/adityagiri3600/latex_to_svg/releases)
 
 ### Quick Test
 ```bash
