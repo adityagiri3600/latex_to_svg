@@ -5,6 +5,7 @@ parser.c
 parser.h
 
 build
+build-mingw
 emsdk
 
 out.svg

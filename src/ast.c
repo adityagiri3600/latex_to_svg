@@ -1,17 +1,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "ast.h"
 #include "svg_letters.h"
 
-const int FONT_SIZE = 28; // Base font size for SVG rendering
+
+static char* string_append(char* str, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(NULL, 0, format, args);
+    va_end(args);
+    
+    if (len < 0) return str;
+    size_t current_len = str ? strlen(str) : 0;
+    str = realloc(str, current_len + len + 1);
+    
+    if (!str) return NULL;
+    va_start(args, format);
+    vsnprintf(str + current_len, len + 1, format, args);
+    va_end(args);
+    
+    return str;
+}
+
+const int FONT_SIZE = 28; 
 const int CHAR_WIDTH = 12;
 const int CHAR_HEIGHT = 20;
 const int PADDING = 10;
-const int FRAC_PADDING = 5;    // Space above and below the fraction bar
-const int CHAR_SPACING = 5;    // Space between characters in a sequence
-const float FRAC_SCALE = 0.8f; // 70% scale for numerator/denominator
-const float SCRIPT_SCALE = 0.6f; // 60% scale for superscript and subscript
+const int FRAC_PADDING = 5;    
+const int CHAR_SPACING = 5;    
+const float FRAC_SCALE = 0.8f; 
+const float SCRIPT_SCALE = 0.6f; 
 
 Node *create_character_node(char ch)
 {
@@ -90,7 +110,7 @@ void free_ast(Node *node)
         free_ast(node->data.subscript.sub);
         break;
     case NODE_CHARACTER:
-        // No additional memory to free
+        
         break;
     }
     free(node);
@@ -136,8 +156,9 @@ void calculate_dimensions(Node *node)
     }
 }
 
-static void render_char_centered(char ch, int cx, int cy, float scale)
+static char* render_char_centered(char ch, int cx, int cy, float scale)
 {
+    char* result = NULL;
     const SvgLetter *g = get_svg_letter(ch);
 
     if (g) {
@@ -146,7 +167,7 @@ static void render_char_centered(char ch, int cx, int cy, float scale)
         float g_scale_x = (g->width * scale / 600);
         float g_scale_y = -(g->height * scale / 600);
 
-        printf(
+        result = string_append(result,
             "  <g transform=\"translate(%f,%f) scale(%f,%f)\">\n"
             "    <path d=\"%s\" fill=\"black\" stroke=\"black\" stroke-width=\"1\" />\n"
             "  </g>\n",
@@ -155,12 +176,13 @@ static void render_char_centered(char ch, int cx, int cy, float scale)
     } else {
         char buf[2] = { ch, 0 };
         float fs = FONT_SIZE * scale;
-        printf(
+        result = string_append(result,
           "  <text x=\"%d\" y=\"%d\" font-family=\"Arial\" font-size=\"%f\" "
           "fill=\"black\" text-anchor=\"middle\" dominant-baseline=\"middle\">%s</text>\n",
           cx, cy, fs, buf
         );
     }
+    return result;
 }
 
 
@@ -187,26 +209,36 @@ static void flatten(Node *n, char *out, size_t cap)
     }
 }
 
-void generate_svg(Node *node, int x, int y, float scale)
+char* generate_svg(Node *node, int x, int y, float scale)
 {
+    char* result = NULL;
     if (!node)
-        return;
+        return result;
 
     switch (node->type)
     {
         case NODE_CHARACTER:
-            render_char_centered(node->data.character.ch, x, y, scale);
+            result = render_char_centered(node->data.character.ch, x, y, scale);
             break;
         case NODE_SEQUENCE:
         {
             int start = x - node->width*scale / 2;
             if (start < 0) start = 0;
             start += node->data.sequence.left->width * scale / 2;
-            generate_svg(node->data.sequence.left, start, y, scale);
+            char* left_svg = generate_svg(node->data.sequence.left, start, y, scale);
 
             int adv = node->data.sequence.left->width * scale / 2 + CHAR_SPACING * scale 
                       + node->data.sequence.right->width * scale / 2;
-            generate_svg(node->data.sequence.right, start + adv, y, scale);
+            char* right_svg = generate_svg(node->data.sequence.right, start + adv, y, scale);
+            
+            if (left_svg) {
+                result = string_append(result, "%s", left_svg);
+                free(left_svg);
+            }
+            if (right_svg) {
+                result = string_append(result, "%s", right_svg);
+                free(right_svg);
+            }
             break;
         }
 
@@ -220,17 +252,26 @@ void generate_svg(Node *node, int x, int y, float scale)
 
             int barY = y;
 
-            printf("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
+            result = string_append(result, "  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
                 "stroke=\"black\" stroke-width=\"1\" />\n",
                 x - fracW / 2, barY, x + fracW / 2, barY);
 
             int numX = x;
             int numY = barY - node->data.fraction.numerator->height * sub / 2 - FRAC_PADDING * sub;
-            generate_svg(node->data.fraction.numerator, numX, numY, sub);
+            char* num_svg = generate_svg(node->data.fraction.numerator, numX, numY, sub);
             
             int denX = x;
             int denY = barY + node->data.fraction.denominator->height * sub / 2 + FRAC_PADDING * sub;
-            generate_svg(node->data.fraction.denominator, denX, denY, sub);
+            char* den_svg = generate_svg(node->data.fraction.denominator, denX, denY, sub);
+            
+            if (num_svg) {
+                result = string_append(result, "%s", num_svg);
+                free(num_svg);
+            }
+            if (den_svg) {
+                result = string_append(result, "%s", den_svg);
+                free(den_svg);
+            }
             break;
         }
         case NODE_SUPERSCRIPT:
@@ -239,11 +280,20 @@ void generate_svg(Node *node, int x, int y, float scale)
 
             int baseX = x;
             int baseY = y;
-            generate_svg(node->data.superscript.base, baseX, baseY, scale);
+            char* base_svg = generate_svg(node->data.superscript.base, baseX, baseY, scale);
 
             int supX = x + node->data.superscript.base->width / 2 + 5*scale;
             int supY = baseY - node->data.superscript.base->height / 2;
-            generate_svg(node->data.superscript.sup, supX, supY, sub);
+            char* sup_svg = generate_svg(node->data.superscript.sup, supX, supY, sub);
+            
+            if (base_svg) {
+                result = string_append(result, "%s", base_svg);
+                free(base_svg);
+            }
+            if (sup_svg) {
+                result = string_append(result, "%s", sup_svg);
+                free(sup_svg);
+            }
             break;
         }
         case NODE_SUBSCRIPT:
@@ -252,20 +302,30 @@ void generate_svg(Node *node, int x, int y, float scale)
 
             int baseX = x;
             int baseY = y;
-            generate_svg(node->data.subscript.base, baseX, baseY, scale);
+            char* base_svg = generate_svg(node->data.subscript.base, baseX, baseY, scale);
 
             int subX = x + node->data.subscript.base->width / 2 + 5*scale;
             int subY = baseY + node->data.superscript.base->height / 2;
-            generate_svg(node->data.subscript.sub, subX, subY, sub);
+            char* sub_svg = generate_svg(node->data.subscript.sub, subX, subY, sub);
+            
+            if (base_svg) {
+                result = string_append(result, "%s", base_svg);
+                free(base_svg);
+            }
+            if (sub_svg) {
+                result = string_append(result, "%s", sub_svg);
+                free(sub_svg);
+            }
             break;
         }
     }
+    return result;
 }
 
 void print_ast(Node* node, int depth) {
     if (!node) return;
     
-    // Print indentation
+    
     for (int i = 0; i < depth; i++) {
         printf("  ");
     }

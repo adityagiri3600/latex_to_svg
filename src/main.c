@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "ast.h"
 
@@ -35,7 +36,11 @@ int main() {
                    "    ]]></style>\n"
                    "</defs>\n");
 
-            generate_svg(result_ast, 20, 75, 1.0);
+            char* svg_content = generate_svg(result_ast, 20, 75, 1.0);
+            if (svg_content) {
+                printf("%s", svg_content);
+                free(svg_content);
+            }
             
             printf("</svg>\n");
             free_ast(result_ast);

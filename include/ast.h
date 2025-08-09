@@ -57,7 +57,7 @@ Node* create_subscript_node(Node* base, Node* subscript);
 void free_ast(Node* node);
 
 void calculate_dimensions(Node* node);
-void generate_svg(Node* node, int x, int y, float scale);
+char* generate_svg(Node* node, int x, int y, float scale);
 void print_ast(Node* node, int depth);
 
 #endif
