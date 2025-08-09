@@ -30,7 +30,7 @@ jobs:
     
     - name: Install dependencies (Windows)
       if: runner.os == 'Windows'
-      run: choco install cmake mingw flex-bison
+      run: choco install cmake mingw winflexbison3
     
     - name: Build
       run: |

@@ -29,7 +29,7 @@ pacman -S cmake gcc flex bison
 - Or install chocolatey and run:
 
 ```bash
-choco install cmake gcc flex bison
+choco install cmake gcc winflexbison3
 ```
 Make sure to add the installation directory to your PATH.
 
