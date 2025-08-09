@@ -38,7 +38,7 @@ jobs:
         mkdir -p build_temp
         cd build_temp
         cmake ..
-        make parser.c lexer.c
+        make Parser Lexer
         cp parser.c parser.h lexer.c ../src/
         cd ..
         rm -rf build_temp
