@@ -2,82 +2,120 @@
 <html>
 
 <head>
-    <title>LaTeX to SVG WASM</title>
+    <title>LaTeX to SVG</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #latexInput { width: 300px; padding: 8px; margin: 10px 0; }
-        button { padding: 8px 16px; }
-        #status { margin: 10px 0; font-weight: bold; }
-        #output { margin: 20px 0; border: 1px solid #ccc; padding: 10px; min-height: 100px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px; 
+        }
+        .input-group { 
+            margin: 20px 0; 
+        }
+        input { 
+            width: 400px; 
+            padding: 10px; 
+            font-size: 16px; 
+        }
+        button { 
+            padding: 10px 20px; 
+            font-size: 16px; 
+            margin-left: 10px; 
+        }
+        #output { 
+            margin: 30px 0; 
+            padding: 20px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            min-height: 100px; 
+            background: #f9f9f9; 
+        }
+        .status { color: #666; }
+        .error { color: #d32f2f; }
+        .success { color: #388e3c; }
+        .examples {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .example {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        .example:hover {
+            background: #d0d0d0;
+        }
     </style>
 </head>
 
 <body>
     <h1>LaTeX to SVG Converter</h1>
-    <input type="text" id="latexInput" placeholder="eg. x^2 + y" disabled>
-    <button onclick="convert()" id="convertBtn" disabled>Convert</button>
-    <div id="status">Loading WASM module...</div>
+    
+    <div class="input-group">
+        <input type="text" id="input" placeholder="Enter LaTeX expression" disabled>
+        <button onclick="convert()" disabled>Convert</button>
+    </div>
+    
+    <div class="examples">
+        <strong>Examples:</strong>
+        <span class="example" onclick="setExample('x^2 + y')">x^2 + y</span>
+        <span class="example" onclick="setExample('\\frac{1+\\frac{x+1}{2}}{3}')">\frac{1+\frac{x+1}{2}}{3}</span>
+        <span class="example" onclick="setExample('x_1 + x_2')">x_1 + x_2</span>
+        <span class="example" onclick="setExample('\\frac{x^2+1}{y-1}')">\frac{x^2+1}{y-1}</span>
+    </div>
+    
+    <div id="status" class="status">Loading...</div>
     <div id="output"></div>
 
     <script src="./l2s.js"></script>
     <script>
-        let Module = null;
-        let isLoading = true;
-
-        console.log('Starting to load WASM module...');
+        let Module;
 
         LatexToSvg().then(instance => {
             Module = instance;
-            isLoading = false;
-            console.log('WASM module loaded successfully');
-            
-            document.getElementById('latexInput').disabled = false;
-            document.getElementById('convertBtn').disabled = false;
-            document.getElementById('status').innerHTML = '<span style="color: green;">Ready!</span>';
+            document.querySelector('input').disabled = false;
+            document.querySelector('button').disabled = false;
+            document.getElementById('status').innerHTML = '<span class="success">WASM loaded.</span>';
         }).catch(err => {
-            isLoading = false;
-            console.error('Failed to load WASM module:', err);
-            document.getElementById('status').innerHTML = '<span style="color: red;">Failed to load WASM module</span>';
+            document.getElementById('status').innerHTML = '<span class="error">Failed to load WASM module</span>';
         });
 
-        function convert() {
-            if (isLoading) {
-                document.getElementById('status').innerHTML = '<span style="color: orange;">Still loading, please wait...</span>';
-                return;
-            }
-            
-            if (!Module) {
-                document.getElementById('status').innerHTML = '<span style="color: red;">WASM module failed to load</span>';
-                return;
-            }
+        function setExample(text) {
+            if (!Module) return;
+            document.getElementById('input').value = text;
+            convert();
+        }
 
-            const input = document.getElementById('latexInput').value.trim();
-            if (!input) {
-                document.getElementById('output').innerHTML = '<p>Please enter some LaTeX</p>';
-                return;
-            }
+        function convert() {
+            const input = document.getElementById('input').value.trim();
+            if (!input || !Module) return;
 
             try {
-                console.log('Converting:', input);
                 const result = Module.ccall('latex_to_svg', 'string', ['string'], [input]);
-                
                 if (result) {
                     document.getElementById('output').innerHTML = result;
                 } else {
-                    document.getElementById('output').innerHTML = '<p style="color: orange;">No output generated</p>';
+                    document.getElementById('output').innerHTML = '<span class="error">No output generated</span>';
                 }
             } catch (error) {
-                console.error('Error during conversion:', error);
-                document.getElementById('output').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+                document.getElementById('output').innerHTML = 
+                    `<svg width="400" height="60" xmlns="http://www.w3.org/2000/svg">
+                        <text x="10" y="20" fill="red" font-family="Arial" font-size="14">
+                            Runtime Error: ${error.message}
+                        </text>
+                    </svg>`;
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('latexInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !isLoading && Module) {
-                    convert();
-                }
-            });
+        document.getElementById('input').addEventListener('keypress', e => {
+            if (e.key === 'Enter') convert();
         });
     </script>
 </body>
