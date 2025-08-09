@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux-x64
+          - os: windows-latest
+            name: windows-x64
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: sudo apt update && sudo apt install cmake gcc flex bison
+    
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: choco install cmake mingw flex-bison
+    
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build . --config Release
+    
+    - name: Package (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        cd build
+        tar -czf ../l2s-${{ matrix.name }}.tar.gz l2s
+    
+    - name: Package (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd build
+        7z a ../l2s-${{ matrix.name }}.zip l2s.exe
+    
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      with:
+        files: l2s-${{ matrix.name }}.*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
