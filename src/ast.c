@@ -282,7 +282,11 @@ char* generate_svg(Node *node, int x, int y, float scale)
             int baseY = y;
             char* base_svg = generate_svg(node->data.superscript.base, baseX, baseY, scale);
 
-            int supX = x + node->data.superscript.base->width / 2 + 5*scale;
+            int baseWidth = node->data.superscript.base->width / 2;
+            int supWidth = node->data.superscript.sup->width * sub / 2;
+            int maxWidth = baseWidth > supWidth ? baseWidth : supWidth;
+
+            int supX = x + maxWidth + 5*scale;
             int supY = baseY - node->data.superscript.base->height / 2;
             char* sup_svg = generate_svg(node->data.superscript.sup, supX, supY, sub);
             
@@ -304,8 +308,12 @@ char* generate_svg(Node *node, int x, int y, float scale)
             int baseY = y;
             char* base_svg = generate_svg(node->data.subscript.base, baseX, baseY, scale);
 
-            int subX = x + node->data.subscript.base->width / 2 + 5*scale;
-            int subY = baseY + node->data.superscript.base->height / 2;
+            int baseWidth = node->data.subscript.base->width / 2;
+            int subWidth = node->data.subscript.sub->width * sub / 2;
+            int maxWidth = baseWidth > subWidth ? baseWidth : subWidth;
+
+            int subX = x + maxWidth + 5*scale;
+            int subY = baseY + node->data.subscript.base->height / 2;
             char* sub_svg = generate_svg(node->data.subscript.sub, subX, subY, sub);
             
             if (base_svg) {
@@ -411,7 +419,6 @@ char* latex_to_svg_string(const char* input) {
         
         free_ast(result_ast);
         result_ast = NULL;
-        
         return output;
     }
     
