@@ -11,10 +11,10 @@ A LaTeX to SVG converter written in C.
 ### Quick Test
 ```bash
 # Linux/macOS
-echo "x^2 + y^2 = r^2" | ./l2s > equation.svg
+echo "x_1 + \frac{x^2+5}{1}" | ./l2s > equation.svg
 
 # Windows
-echo x^2 + y^2 = r^2 | l2s.exe > equation.svg
+echo x_1 + \frac{x^2+5}{1} | l2s.exe > equation.svg
 ```
 
 ## Building from Source
@@ -63,9 +63,3 @@ cmake --build . --config Release
 After building, the executable will be located at:
 - Linux/macOS: `build/l2s`
 - Windows: `build/Release/l2s.exe` (Visual Studio) or `build/l2s.exe` (MinGW)
-
-## Usage
-
-```bash
-echo "x^2 + y" | ./build/l2s > output.svg
-```
