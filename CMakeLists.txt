@@ -35,6 +35,9 @@ if(WIN32)
     if(BISON_EXECUTABLE)
         set(BISON_EXECUTABLE ${BISON_EXECUTABLE} CACHE FILEPATH "Path to bison")
     endif()
+    
+    # win_flex unistd.h issue
+    add_compile_definitions(YY_NO_UNISTD_H)
 endif()
 
 # WASM build
