@@ -38,8 +38,10 @@ jobs:
         mkdir -p build_temp
         cd build_temp
         cmake ..
-        make Parser Lexer
-        cp parser.c parser.h lexer.c ../src/
+        make
+        find . -name "parser.c" -exec cp {} ../src/ \;
+        find . -name "parser.h" -exec cp {} ../src/ \;
+        find . -name "lexer.c" -exec cp {} ../src/ \;
         cd ..
         rm -rf build_temp
     
