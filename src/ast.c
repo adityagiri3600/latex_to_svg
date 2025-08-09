@@ -373,3 +373,47 @@ void print_ast(Node* node, int depth) {
             break;
     }
 }
+
+char* latex_to_svg_string(const char* input) {
+    extern int yyparse();
+    extern int yy_scan_string(const char*);
+    extern Node* result_ast;
+    
+    if (!input) return NULL;
+    
+    yy_scan_string(input);
+    if (yyparse() == 0 && result_ast) {
+        calculate_dimensions(result_ast);
+        
+        int svg_width = result_ast->width + 40;
+        
+        char* output = NULL;
+        
+        output = string_append(output, "<svg width=\"%d\" height=\"150\">\n", svg_width);
+        output = string_append(output, 
+            "<defs>\n"
+            "    <style type=\"text/css\"><![CDATA[\n"
+            "    @font-face{\n"
+            "        font-family:\"LM Roman\";\n"
+            "        src:url(\"LMRoman10-Regular.otf\") format(\"opentype\");\n"
+            "    }\n"
+            "    text{ font-family:\"LM Roman\", serif; }\n"
+            "    ]]></style>\n"
+            "</defs>\n");
+
+        char* svg_content = generate_svg(result_ast, 20, 75, 1.0);
+        if (svg_content) {
+            output = string_append(output, "%s", svg_content);
+            free(svg_content);
+        }
+        
+        output = string_append(output, "</svg>\n");
+        
+        free_ast(result_ast);
+        result_ast = NULL;
+        
+        return output;
+    }
+    
+    return NULL;
+}

@@ -59,5 +59,6 @@ void free_ast(Node* node);
 void calculate_dimensions(Node* node);
 char* generate_svg(Node* node, int x, int y, float scale);
 void print_ast(Node* node, int depth);
+char* latex_to_svg_string(const char* input);
 
 #endif

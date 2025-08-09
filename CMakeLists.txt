@@ -40,11 +40,6 @@ endif()
 # WASM build
 if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".js")
-    
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s WASM=1 -s EXPORTED_FUNCTIONS='[\"_main\", \"_malloc\", \"_free\", \"_latex_to_svg\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\", \"setValue\", \"getValue\", \"writeAsciiToMemory\", \"stringToUTF8\", \"UTF8ToString\"]'")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s ALLOW_MEMORY_GROWTH=1")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s MODULARIZE=1 -s EXPORT_NAME='LatexToSvg'")
-    
     set(SKIP_FLEX_BISON ON)
     set(WEB_SOURCES src/web_api.c)
 endif()
@@ -71,21 +66,27 @@ else()
     )
 endif()
 
-set(SOURCES
-    src/main.c
-    src/ast.c
-    src/svg_letters.c
-    ${GENERATED_SOURCES}
-    ${WEB_SOURCES}
-)
+if(EMSCRIPTEN)
+    set(SOURCES
+        src/ast.c
+        src/svg_letters.c
+        ${GENERATED_SOURCES}
+        ${WEB_SOURCES}
+    )
+else()
+    set(SOURCES
+        src/main.c
+        src/ast.c
+        src/svg_letters.c
+        ${GENERATED_SOURCES}
+    )
+endif()
 
 add_executable(l2s ${SOURCES})
 
-if(MSVC)
-    target_compile_definitions(l2s PRIVATE
-        YY_NO_UNISTD_H
-        isatty=_isatty
-        fileno=_fileno
+if(EMSCRIPTEN)
+    set_target_properties(l2s PROPERTIES
+        LINK_FLAGS "-s WASM=1 -s EXPORTED_FUNCTIONS='[\"_malloc\",\"_free\",\"_latex_to_svg\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\",\"UTF8ToString\",\"stringToUTF8\"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME='LatexToSvg' -s NO_EXIT_RUNTIME=1"
     )
 endif()
 
